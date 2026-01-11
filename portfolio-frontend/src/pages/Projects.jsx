@@ -5,7 +5,7 @@ export default function Projects() {
 
   // Fetch projects from backend
   useEffect(() => {
-    fetch("http://localhost:5000/api/projects") // your backend endpoint
+    fetch("https://portfolio-vie1.onrender.com/api/projects") // your backend endpoint
       .then(res => res.json())
       .then(data => setProjects(data))
       .catch(err => console.error("Error fetching projects:", err));

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const API_URL = "https://portfolio-vie1.onrender.com/api/projects";
+
 export default function Admin() {
   const [projects, setProjects] = useState([]);
   const [form, setForm] = useState({ title: "", description: "", tech: "", link: "" });
@@ -8,9 +10,14 @@ export default function Admin() {
 
   // Fetch projects from backend
   const fetchProjects = async () => {
-    const res = await fetch("http://localhost:5000/api/projects");
-    const data = await res.json();
-    setProjects(data);
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      setProjects(data);
+    } catch (err) {
+      console.error("Error fetching projects:", err);
+      setStatus("Failed to fetch projects");
+    }
   };
 
   useEffect(() => {
@@ -23,36 +30,46 @@ export default function Admin() {
   // Add or Edit project
   const handleSubmit = async e => {
     e.preventDefault();
-    if (editingId) {
-      // Edit project
-      const res = await fetch(`http://localhost:5000/api/projects/${editingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (res.ok) setStatus("Project updated successfully!");
-    } else {
-      // Add new project
-      const res = await fetch("http://localhost:5000/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (res.ok) setStatus("Project added successfully!");
+    try {
+      if (editingId) {
+        // Edit project
+        const res = await fetch(`${API_URL}/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (res.ok) setStatus("Project updated successfully!");
+      } else {
+        // Add new project
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (res.ok) setStatus("Project added successfully!");
+      }
+      setForm({ title: "", description: "", tech: "", link: "" });
+      setEditingId(null);
+      fetchProjects();
+    } catch (err) {
+      console.error("Error submitting project:", err);
+      setStatus("Failed to submit project");
     }
-    setForm({ title: "", description: "", tech: "", link: "" });
-    setEditingId(null);
-    fetchProjects();
   };
 
   // Delete project
   const handleDelete = async id => {
     if (!window.confirm("Are you sure you want to delete this project?")) return;
-    const res = await fetch(`http://localhost:5000/api/projects/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setStatus("Project deleted successfully!");
-      fetchProjects();
-    } else {
+    try {
+      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setStatus("Project deleted successfully!");
+        fetchProjects();
+      } else {
+        setStatus("Failed to delete project");
+      }
+    } catch (err) {
+      console.error("Error deleting project:", err);
       setStatus("Failed to delete project");
     }
   };
@@ -131,12 +148,14 @@ export default function Admin() {
             </div>
             <div className="flex flex-col gap-2">
               <button
+                type="button"
                 className="px-4 py-2 bg-yellow-400 text-white rounded hover:bg-yellow-500"
                 onClick={() => handleEdit(p)}
               >
                 Edit
               </button>
               <button
+                type="button"
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                 onClick={() => handleDelete(p._id)}
               >
